@@ -1,0 +1,10 @@
+# Make sure that compiled python files are not tracked
+*.pyc
+
+# Do not track hidden (local only) files, explicitly keeping .gitignore
+.*
+!.gitignore
+
+# Data may be stored here, and will never be uploaded. This is to conform with data sharing agreements.
+data/
+
