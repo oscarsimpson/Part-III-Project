@@ -1,6 +1,7 @@
 import numpy as np
 import gvar as gv
 import matplotlib.pyplot as plt
+import sys
 
 time_slices = 96
 
@@ -18,8 +19,13 @@ def jacknife(arr):
 	return out	
 		
 
-with open("data/2pt_hisq_msml5_fine_D_nongold_489conf.gpl", "r") as textFile:
+if len(sys.argv) == 1:
+	filename = "2pt_hisq_msml5_fine_D_nongold_489conf"
+else:
+	filename = sys.argv[1]
+
+with open(f"data/{filename}.gpl", "r") as textFile:
 	raw_data = np.loadtxt(textFile, usecols=range(1,time_slices+1))
 	data = jacknife(raw_data)	
-	np.savetxt("data/jacknife.dat", data)
+	np.savetxt(f"data/{filename}.dat", data)
 
