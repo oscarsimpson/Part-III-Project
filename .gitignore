@@ -12,5 +12,5 @@
 
 # Data may be stored here, and will never be uploaded. This is to conform with data sharing agreements.
 data/
-*.data
+*.dat
 
