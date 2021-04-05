@@ -11,7 +11,8 @@ def main():
     # Load data
     data = np.loadtxt(f"data/{filename}.dat")
 
-    plot(data, f"Average 2-point correlator for n={len(data)} gauge configurations\non a fine lattice", filename=f"correlation_{filename}")
+    plot(data, f"Average 2-point correlator for n={len(data)} gauge configurations\non a fine lattice", filename=f"correlation_{filename}_title")
+    plot(data, None, filename=f"correlation_{filename}")
 
 def plot(correlation_data, title, filename):
     avg = correlation_data.mean(0)
@@ -19,7 +20,8 @@ def plot(correlation_data, title, filename):
     time_slices = len(avg)
 
     fig, ax = plt.subplots(figsize=(12, 7.2))
-    ax.set_title(title, fontsize=24)
+    if title != None:
+        ax.set_title(title, fontsize=24)
 
     ax.plot(range(time_slices), avg, 'b+', linewidth=0)
     ax.set_xlabel("Time", fontsize=18)
