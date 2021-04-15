@@ -14,21 +14,19 @@ lsqfit.LSQFit.fmt_parameter = '%8.6f +- %8.6f'
 SIMPLE_3PT = False          # use fake amplitudes in Corr3s
 
 DISPLAYPLOTS = False         # display plots at end of fitting
-try: 
-    import matplotlib
-except ImportError:
-    DISPLAYPLOTS = False
+import matplotlib.pyplot as plt
 VERBOSE = False
 
 ainv = gv.gvar( 1.9006,0.0020)/gv.gvar(0.1715,0.0009)* 0.197326968
 #ainv = 1.0/0.12* 0.197326968 
-tmin = 7
 Lt = 96
 svdcut = 1.0e-3
 # here p0 denotes zero momentum K propagator and Q^2 max,P0 = , p1 = , p2 = , p3 = .... (AS A TWIST)
 
 def main():
     nexp_max = 8
+    tmins = [7, 5, 3]
+    nterms = range(1, 6+1)
     DATAFILES = ["data/2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf.gpl"]  # data file
     dsetfor = Dataset(DATAFILES[0],binsize=1)
     dset = Dataset()
@@ -40,13 +38,19 @@ def main():
     data = avg_data(dset)
     print ('Data file: ', DATAFILES)
 
-    p = None
-    fitter = CorrFitter(models=build_models(), ratio=False)
-    
-    for nexp in [1,2,3,4,5,6]:
-        # We recreate the prior from scratch each iteration as we take the results to be our new priors, but we must also include the 'default' priors for each label, as we now have an extra exp term.
-        prior=add_prior(nexp, p)
-        fit = fitter.lsqfit(data=data,prior=prior,nterm=nexp,maxit=100,svdcut=svdcut)
+    p0 = "results"
+    fitter = CorrFitter(models=build_models(tmins[0]), ratio=False)
+
+    results = {"K":{
+        "a_0":[], "ao_0":[], "log(dE_0)":[], "log(dEo_0)":[]
+            }, "D":{
+            "a_0":[], "ao_0":[], "log(dE_0)":[], "log(dEo_0)":[]
+            }, "Fit":{
+            "chi2/dof":[], "Q":[], "log(GBF)":[], 
+                }}
+
+    for nexp in nterms:
+        fit = fitter.lsqfit(data=data,prior=build_prior(nexp),p0=p0,nterm=nexp,maxit=10000,svdcut=svdcut)
         p = fit.p
         print()
         print("========"*6)
@@ -58,33 +62,42 @@ def main():
             print ("----"*3, "RESULTS", "----"*3)
             print_bufferdict(p)
             print()
+        print(fit.format())
         print_results(fit)
+
+        results["K"]["a_0"].append(p["K_max:a"][0])
+        results["K"]["ao_0"].append(p["K_max:ao"][0])
+        results["K"]["log(dE_0)"].append(p["log(dE.K_max)"][0])
+        results["K"]["log(dEo_0)"].append(p["log(dEo.K_max)"][0])
+
+        results["D"]["a_0"].append(p["D_Gold:a"][0])
+        results["D"]["ao_0"].append(p["D_Gold:ao"][0])
+        results["D"]["log(dE_0)"].append(p["log(dE.D_Gold)"][0])
+        results["D"]["log(dEo_0)"].append(p["log(dEo.D_Gold)"][0])
+
+        results["Fit"]["chi2/dof"].append(gv.gvar(fit.chi2,0))
+        results["Fit"]["Q"].append(gv.gvar(fit.Q, 0))
+        results["Fit"]["log(GBF)"].append(gv.gvar(fit.logGBF, 0))
+
+    gv.gdump(results["D"], "outputD.json")
+    gv.gdump(results["K"], "outputK.json")
+    gv.gdump(results["Fit"], "outputFit.json")
 
     if DISPLAYPLOTS:
         fitter.display_plots()
 
-def add_prior(nexp, p0):
+def build_prior(nexp):
     defaults={"D_Gold:a": [gv.gvar(0.01, 1.0)]*nexp,
             "D_Gold:ao": [gv.gvar(0.01, 0.5)]*nexp,
-            "log(dE.D_Gold)": [gv.gvar(0.8, 0.3)] + [gv.gvar(0.4, 0.2)]*(nexp-1),
-            "log(dEo.D_Gold)": [gv.gvar(1.1, 0.4)] + [gv.gvar(0.4, 0.2)]*(nexp-1),
+            "log(dE.D_Gold)": [log(gv.gvar(0.8, 0.3))] + [log(gv.gvar(0.4, 0.2))]*(nexp-1),
+            "log(dEo.D_Gold)": [log(gv.gvar(1.1, 0.4))] + [log(gv.gvar(0.4, 0.2))]*(nexp-1),
 
             "K_max:a": [gv.gvar(0.01, 10.0)]*nexp,
-            "K_max:ao": [gv.gvar(0.01, 0.5)]*nexp,
-            "log(dE.K_max)": [gv.gvar(1.0, 1.0)] + [gv.gvar(2.0, 1.0)]*(nexp-1),
-            "log(dEo.K_max)": [gv.gvar(1.0, 1.0)] + [gv.gvar(1.0, 1.0)]*(nexp-1)
+            "K_max:ao": [gv.gvar(0.01, 5.0)]*nexp,
+            "log(dE.K_max)": [log(gv.gvar(1.0, 1.0))] + [log(gv.gvar(2.0, 1.0))]*(nexp-1),
+            "log(dEo.K_max)": [log(gv.gvar(1.0, 1.0))] + [log(gv.gvar(1.0, 1.0))]*(nexp-1)
             }
     prior = gv.BufferDict(defaults)
-    
-    if p0 is not None:
-    # Here, real_arr is the given precomputed prior, and prior[key] is the associated array in the new BufferDict
-        for (key, real_arr) in p0.items():
-            if hasattr(real_arr, '__iter__'):
-                for i in range(len(real_arr)):
-                    prior[key][i] = real_arr[i]
-            else:
-                prior[key] = real_arr
-
     return prior
 
 def print_results(fit):
@@ -105,7 +118,7 @@ def print_bufferdict(prior):
 def fmtlist(x):
     return '  '.join([xi.fmt(6) for xi in x]) # 6 decimal places of precision
 
-def build_models():
+def build_models(tmin):
     tdata = range(0,Lt)
     tfit = range(tmin,Lt+1-tmin) # all ts
     
