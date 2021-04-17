@@ -32,7 +32,8 @@ def main():
     print(f"First estimate for m_eff = {avgmeff}")
     
     if not noplot:
-        plot(meff, avgmeff, f"Effective mass for n={len(meff)} gauge configurations\non a fine lattice", f"meff_{filename}", errormag)
+        plot(meff, avgmeff, f"Effective mass for n={len(meff)} gauge configurations\non a fine lattice", f"meff_{filename}_title", errormag)
+        plot(meff, avgmeff, None, f"meff_{filename}", errormag)
 
 
 def plot(meff_data, avg_meff, title, filename, errormag):
