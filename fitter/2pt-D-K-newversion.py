@@ -25,7 +25,7 @@ svdcut = 1.0e-3
 
 def main():
     nexp_max = 8
-    tmins = [7, 5, 3]
+    tmins = [3, 4, 5, 6, 7, 9]
     nterms = range(1, 6+1)
     DATAFILES = ["data/2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf.gpl"]  # data file
     dsetfor = Dataset(DATAFILES[0],binsize=1)
@@ -37,9 +37,13 @@ def main():
 
     data = avg_data(dset)
     print ('Data file: ', DATAFILES)
+    
+    for tmin in tmins:
+        compute_fits(data, nterms, tmin)
 
-    p0 = "results"
-    fitter = CorrFitter(models=build_models(tmins[0]), ratio=False)
+def compute_fits(data, nterms, tmin):
+    p0 = "data/results"
+    fitter = CorrFitter(models=build_models(tmin), ratio=False)
 
     results = {"K":{
         "a_0":[], "ao_0":[], "log(dE_0)":[], "log(dEo_0)":[]
@@ -75,13 +79,15 @@ def main():
         results["D"]["log(dE_0)"].append(p["log(dE.D_Gold)"][0])
         results["D"]["log(dEo_0)"].append(p["log(dEo.D_Gold)"][0])
 
-        results["Fit"]["chi2/dof"].append(gv.gvar(fit.chi2,0))
+        results["Fit"]["chi2/dof"].append(gv.gvar(fit.chi2/fit.dof,0))
         results["Fit"]["Q"].append(gv.gvar(fit.Q, 0))
         results["Fit"]["log(GBF)"].append(gv.gvar(fit.logGBF, 0))
 
-    gv.gdump(results["D"], "outputD.json")
-    gv.gdump(results["K"], "outputK.json")
-    gv.gdump(results["Fit"], "outputFit.json")
+    dat_path = "data/" + str(tmin) + "/"
+    if not os.path.exists(dat_path): os.makedirs(dat_path)
+    gv.gdump(results["D"], dat_path + "outputD.json")
+    gv.gdump(results["K"], dat_path + "outputK.json")
+    gv.gdump(results["Fit"], dat_path + "outputFit.json")
 
     if DISPLAYPLOTS:
         fitter.display_plots()
