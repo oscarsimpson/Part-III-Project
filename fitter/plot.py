@@ -50,7 +50,6 @@ def plot(raw_path, n):
                 ax = axs[y,x]
                 title = flavour + " " + param
                 means, errs = split_gvars(data)
-                ns = nterms
 
                 if "Fit" in title:
                     fit_str = ""
@@ -77,8 +76,7 @@ def plot(raw_path, n):
                     val_str = "y=" + fr"{means[good_n]:.4f} $\pm$ {errs[good_n]:.4f}"
                     ax.text(0.4, 0.8, val_str, transform=ax.transAxes, fontsize=12)
 
-                ax.errorbar(ns, means, errs, fmt="x", ecolor="r", elinewidth=1, capsize=3)
-
+                ax.errorbar(nterms, means, errs, fmt="x", ecolor="r", elinewidth=1, capsize=3)
                 ax.set_title(title, fontsize=18)
                 ax.set_xlabel("n", fontsize = 12)
                 ax.tick_params("both", labelsize=12)
@@ -90,7 +88,7 @@ def plot(raw_path, n):
         # plt.show()
         out_path = "images/" + raw_path.split("/")[1] + "/"
         if not os.path.exists(out_path): os.makedirs(out_path)
-        plt.savefig(out_path + "tmin" + tmin, pad_inches=0)
+        fig.savefig(out_path + l_size + "_tmin" + tmin, pad_inches=0)
 
 
 def split_gvars(vals):
