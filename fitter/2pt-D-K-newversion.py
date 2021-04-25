@@ -11,24 +11,44 @@ import gvar as gv
 import sys
 
 lsqfit.LSQFit.fmt_parameter = '%8.6f +- %8.6f'
-SIMPLE_3PT = False          # use fake amplitudes in Corr3s
 
 DISPLAYPLOTS = False         # display plots at end of fitting
 import matplotlib.pyplot as plt
-VERBOSE = False
+VERBOSE = 1
+DATATAGS = {
+        "2pt_hisq_coarse_D_Gold_K_p0_1053conf": {
+            "D": "2pt_D_Gold_coarse.ll",
+            "K": "2pt_K_coarse_p0.ll"},
+        "2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf": {
+            "D": "2pt_D_gold_msml5_fine.ll",
+            "K": "2pt_msml5_fine_K_zeromom.ll"
+            }
+        }
+
+TPS = {
+        "2pt_hisq_coarse_D_Gold_K_p0_1053conf": 64,
+        "2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf": 96 
+        }
 
 ainv = gv.gvar( 1.9006,0.0020)/gv.gvar(0.1715,0.0009)* 0.197326968
 #ainv = 1.0/0.12* 0.197326968 
-Lt = 96
 svdcut = 1.0e-3
+MAXIT = 10000 # Default is 10,000
 # here p0 denotes zero momentum K propagator and Q^2 max,P0 = , p1 = , p2 = , p3 = .... (AS A TWIST)
 
 def main():
     nexp_max = 8
     tmins = [3, 4, 5, 6, 7, 9]
     nterms = range(1, 6+1)
-    DATAFILES = ["data/2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf.gpl"]  # data file
-    dsetfor = Dataset(DATAFILES[0],binsize=1)
+
+    file_names = next(os.walk("data/"))[2]
+    for file_name in file_names:
+        data_path = "data/" + file_name.split(".")[0] + "/" # The / is necessary as the compute_data_file function expects this
+        compute_data_file(data_path, tmins, nterms)
+
+def compute_data_file(data_path, tmins, nterms):
+    data_file = data_path[:-1] + ".gpl"
+    dsetfor = Dataset(data_file, binsize=1)
     dset = Dataset()
 
     ## GPL: not sure what this i
@@ -36,14 +56,18 @@ def main():
       dset[key] = (array(dsetfor[key]))
 
     data = avg_data(dset)
-    print ('Data file: ', DATAFILES)
+    print ('Data file: ', data_file)
     
     for tmin in tmins:
-        compute_fits(data, nterms, tmin)
+        compute_fits(data, nterms, tmin, data_path)
+        print("Finished computing for tmin = ", tmin)
 
-def compute_fits(data, nterms, tmin):
-    p0 = "data/results"
-    fitter = CorrFitter(models=build_models(tmin), ratio=False)
+def compute_fits(data, nterms, tmin, data_path):
+    p0 = data_path + "results"
+    if not os.path.exists(data_path): os.makedirs(data_path) # So results is in a extant folder
+
+    model_name = data_path.split("/")[1]
+    fitter = CorrFitter(models=build_models(tmin, model_name), ratio=False)
 
     results = {"K":{
         "a_0":[], "ao_0":[], "log(dE_0)":[], "log(dEo_0)":[]
@@ -54,20 +78,21 @@ def compute_fits(data, nterms, tmin):
                 }}
 
     for nexp in nterms:
-        fit = fitter.lsqfit(data=data,prior=build_prior(nexp),p0=p0,nterm=nexp,maxit=10000,svdcut=svdcut)
+        fit = fitter.lsqfit(data=data,prior=build_prior(nexp),p0=p0,nterm=nexp,maxit=MAXIT,svdcut=svdcut)
         p = fit.p
-        print()
-        print("========"*6)
-        print ('nexp =',nexp,' tmin = ',tmin,'svdcut = ',svdcut)
-        print("========"*6)
-        if VERBOSE:
-            print ("----"*3, " PRIOR ", "----"*3)
-            print_bufferdict(prior)
-            print ("----"*3, "RESULTS", "----"*3)
-            print_bufferdict(p)
+        if VERBOSE > 1:
             print()
-        print(fit.format())
-        print_results(fit)
+            print("========"*6)
+            print ('nexp =',nexp,' tmin = ',tmin,'svdcut = ',svdcut)
+            print("========"*6)
+            if VERBOSE > 2:
+                print ("----"*3, " PRIOR ", "----"*3)
+                print_bufferdict(prior)
+                print ("----"*3, "RESULTS", "----"*3)
+                print_bufferdict(p)
+                print()
+            print(fit.format())
+            print_results(fit)
 
         results["K"]["a_0"].append(p["K_max:a"][0])
         results["K"]["ao_0"].append(p["K_max:ao"][0])
@@ -83,11 +108,11 @@ def compute_fits(data, nterms, tmin):
         results["Fit"]["Q"].append(gv.gvar(fit.Q, 0))
         results["Fit"]["log(GBF)"].append(gv.gvar(fit.logGBF, 0))
 
-    dat_path = "data/" + str(tmin) + "/"
-    if not os.path.exists(dat_path): os.makedirs(dat_path)
-    gv.gdump(results["D"], dat_path + "outputD.json")
-    gv.gdump(results["K"], dat_path + "outputK.json")
-    gv.gdump(results["Fit"], dat_path + "outputFit.json")
+    out_path = data_path + str(tmin) + "/"
+    if not os.path.exists(out_path): os.makedirs(out_path)
+    gv.gdump(results["D"], out_path + "outputD.json")
+    gv.gdump(results["K"], out_path + "outputK.json")
+    gv.gdump(results["Fit"], out_path + "outputFit.json")
 
     if DISPLAYPLOTS:
         fitter.display_plots()
@@ -124,18 +149,19 @@ def print_bufferdict(prior):
 def fmtlist(x):
     return '  '.join([xi.fmt(6) for xi in x]) # 6 decimal places of precision
 
-def build_models(tmin):
-    tdata = range(0,Lt)
-    tfit = range(tmin,Lt+1-tmin) # all ts
-    
-    tp = 96 # periodic
-
+def build_models(tminD, model_name):
+    tminK = 3 # Force tmin=3 for K
+    tp = TPS[model_name]
+    tdata = range(0,tp)
+    tfitD = range(tminD,tp+1-tminD) # all ts
+    tfitK = range(tminK,tp+1-tminK) # all ts
+    # range(3, Lt+1 -3) for Lt = 96 for K 
     models = [
-        Corr2(datatag='2pt_msml5_fine_K_zeromom.ll',tp=tp,tdata=tdata,tfit= range(3,Lt+1-3),
+        Corr2(datatag=DATATAGS[model_name]["K"], tp=tp,tdata=tdata,tfit=tfitK,
             a=('K_max:a','K_max:ao'),b=('K_max:a','K_max:ao'),
             dE=('dE.K_max','dEo.K_max'),s=(1.,-1.)),
 
-        Corr2(datatag='2pt_D_gold_msml5_fine.ll',tp=tp,tdata=tdata,tfit=tfit,
+        Corr2(datatag=DATATAGS[model_name]["D"], tp=tp,tdata=tdata,tfit=tfitD,
             a=('D_Gold:a','D_Gold:ao'),b=('D_Gold:a','D_Gold:ao'),
             dE=('dE.D_Gold','dEo.D_Gold'),s=(1.,-1.)),
 
