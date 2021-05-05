@@ -18,6 +18,7 @@ SPACE_VALS = {
         "fine":0.09023,
         "very-coarse":0.1509
         } # fm
+CONVERT = True
 hbar_c = 197.3269804 # MeV.fm
 
 def main(n=6):
@@ -26,7 +27,7 @@ def main(n=6):
         plot("data/" + data_path + "/", n)
 
 def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_Gold_K_p0_1053conf/
-    out_path = "images_separate/" + raw_path.split("/")[1] + "/"
+    out_path = "images_separate/" + ("MeV/" if CONVERT else "lattice/") + raw_path.split("/")[1] + "/"
     if not os.path.exists(out_path): os.makedirs(out_path)
 
     nterms = range(1, n+1)
@@ -69,9 +70,12 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
                 if match:
                     title = match.group()
                     means = np.exp(means) 
-                    means = hbar_c * means / l_space # Converting from lattice units to MeV
+                    if CONVERT:
+                        ax.set_ylabel(f"E (MeV)", fontsize=12)
+                        means = hbar_c * means / l_space # Converting from lattice units to MeV
+                    else:
+                        ax.set_ylabel(r"E (lattice units)", fontsize=12)
                     errs = means * errs # Approximate error dE +- err -> E (1 +- err) for err << dE, which is true in all cases studied.
-                    ax.set_ylabel(f"E (MeV)", fontsize=12)
                 title = r"$" + title + r"$"
                 good_n = GOOD_VALS[int(tmin)]-1
                 val_str = "y=" + fr"{means[good_n]:.4f} $\pm$ {errs[good_n]:.4f}"
@@ -91,7 +95,7 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
         # Plot fitting quality (only chi2/dof)
         ax = axFs[tmin_index // fits_xmax, tmin_index % fits_xmax]
         data = fits["chi2/dof"]
-        title = r"$t_\mathregular{min} = " + tmin + r"$"
+        title = r"$t_\mathrm{min} = " + tmin + r"$"
         means, _ = split_gvars(data)
         fit_str = ""
         for n in range(N_EXCL):

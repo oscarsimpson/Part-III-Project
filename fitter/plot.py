@@ -18,6 +18,7 @@ SPACE_VALS = {
         "fine":0.09023,
         "very-coarse":0.1509
         } # fm
+CONVERT = False
 hbar_c = 197.3269804 # MeV.fm
 
 def main(n=6):
@@ -69,10 +70,12 @@ def plot(raw_path, n):
                     if match:
                         title = match.group()
                         means = np.exp(means) 
-                        means = hbar_c * means / l_space # Converting from lattice units to MeV
+                        if CONVERT:
+                            ax.set_ylabel(f"E (MeV)", fontsize=12)
+                            means = hbar_c * means / l_space # Converting from lattice units to MeV
+                        else:
+                            ax.set_ylabel(f"E (lattice units)", fontsize=12)
                         errs = means * errs # Approximate error dE +- err -> E (1 +- err) for err << dE, which is true in all cases studied.
-                        ax.set_ylabel(f"E (MeV)", fontsize=12)
-
                     good_n = GOOD_VALS[int(tmin)]-1
                     val_str = "y=" + fr"{means[good_n]:.4f} $\pm$ {errs[good_n]:.4f}"
                     ax.text(0.4, 0.8, val_str, transform=ax.transAxes, fontsize=12)
@@ -87,7 +90,7 @@ def plot(raw_path, n):
             x+=1 
                 
         # plt.show()
-        out_path = "images/" + raw_path.split("/")[1] + "/"
+        out_path = "images/" + ("MeV/" if CONVERT else "lattice/") + raw_path.split("/")[1] + "/"
         if not os.path.exists(out_path): os.makedirs(out_path)
         fig.savefig(out_path + l_size + "_tmin" + tmin, pad_inches=0)
 
