@@ -18,16 +18,22 @@ VERBOSE = 1
 DATATAGS = {
         "2pt_hisq_coarse_D_Gold_K_p0_1053conf": {
             "D": "2pt_D_Gold_coarse.ll",
-            "K": "2pt_K_coarse_p0.ll"},
+            "K": "2pt_K_coarse_p0.ll"
+            },
         "2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf": {
             "D": "2pt_D_gold_msml5_fine.ll",
             "K": "2pt_msml5_fine_K_zeromom.ll"
+            },
+        "2pt_hisq_very-coarse_D_Gold_K_1000conf": {
+            "D": "2pt_D_Gold_vc.ll",
+            "K": "2pt_K_vc.ll"
             }
         }
 
 TPS = {
         "2pt_hisq_coarse_D_Gold_K_p0_1053conf": 64,
-        "2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf": 96 
+        "2pt_hisq_msml5_fine_K_zeromom_D_Gold_nongold_495conf": 96,
+        "2pt_hisq_very-coarse_D_Gold_K_1000conf": 48
         }
 
 ainv = gv.gvar( 1.9006,0.0020)/gv.gvar(0.1715,0.0009)* 0.197326968

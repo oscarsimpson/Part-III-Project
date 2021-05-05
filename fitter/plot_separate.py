@@ -15,7 +15,8 @@ GOOD_VALS = {
         9:4} # for tmin = key, the n = value that we decide is a good enough fit to report a converged parameter
 SPACE_VALS = {
         "coarse":0.12404,
-        "fine":0.09023
+        "fine":0.09023,
+        "very-coarse":0.1509
         } # fm
 hbar_c = 197.3269804 # MeV.fm
 
