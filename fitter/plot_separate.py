@@ -30,6 +30,8 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
     out_path = "images_separate/" + ("MeV/" if CONVERT else "lattice/") + raw_path.split("/")[1] + "/"
     if not os.path.exists(out_path): os.makedirs(out_path)
 
+    out_strings = []
+
     nterms = range(1, n+1)
     tmins = sorted(next(os.walk(raw_path))[1])
     for k, v in SPACE_VALS.items():
@@ -39,15 +41,17 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
     
     # Create plot for the fitting qualityy (only chi2/dof)
     # We hope that there are exactly 6 different tmins (3*2) otherwise this shape will need to be changed
-    fits_xmax = 2
-    fits_ymax = 3
-    figF, axFs = plt.subplots(fits_ymax, fits_xmax, figsize = (7, 9), constrained_layout=True)
+    fits_xmax = 3
+    fits_ymax = 2
+    figF, axFs = plt.subplots(fits_ymax, fits_xmax, figsize = (10, 6), constrained_layout=True)
     
     for tmin_index in range(len(tmins)):
         tmin = tmins[tmin_index]
         dat_path = raw_path + tmin + "/"
         results = {"K":gv.gload(dat_path + "outputK.json"), "D":gv.gload(dat_path + "outputD.json")}
         fits = gv.gload(dat_path + "outputFit.json")
+
+        out_strings.append("tmin=" + tmin)
         
         figD, axDs = plt.subplots(2,2, figsize = (9, 6), constrained_layout=True)
         figK, axKs = plt.subplots(2,2, figsize = (9, 6), constrained_layout=True)
@@ -63,6 +67,8 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
                 ax = axs[flavour][y,x]
                 title = param
                 means, errs = split_gvars(data)
+                
+                out_strings.append("flavour=" + flavour)
 
                 # If this plot is for energy, then convert dE -> E
                 regex = re.compile(r"Eo?_\d+")
@@ -77,9 +83,13 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
                         ax.set_ylabel(r"E (lattice units)", fontsize=12)
                     errs = means * errs # Approximate error dE +- err -> E (1 +- err) for err << dE, which is true in all cases studied.
                 title = r"$" + title + r"$"
+
                 good_n = GOOD_VALS[int(tmin)]-1
-                val_str = "y=" + fr"{means[good_n]:.4f} $\pm$ {errs[good_n]:.4f}"
-                ax.text(0.4, 0.5, val_str, transform=ax.transAxes, fontsize=12)
+                good_mean = means[good_n]
+                good_err = errs[good_n]
+                out_strings.append(title + "=" + str(good_mean) + "+-" + str(good_err)) # Add data point to output file for accurate reading
+                val_str = title + "=" + fr"{good_mean:.4f} $\pm$ {good_err:.4f}"
+                ax.text(0.35, 0.5, val_str, transform=ax.transAxes, fontsize=12)
                 ax.errorbar(nterms, means, errs, fmt="x", ecolor="r", elinewidth=1, capsize=3)
                 ax.set_title(title, fontsize=18)
                 ax.set_xlabel("n", fontsize=12)
@@ -99,15 +109,21 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
         means, _ = split_gvars(data)
         fit_str = ""
         for n in range(N_EXCL):
-            fit_str = "\n".join((fit_str, "n=" + str(n+1) + " y=" + f"{means[n]:.4}"))
-        ax.text(0.03, 0.05, fit_str, transform=ax.transAxes, fontsize=12)
-        ax.set_ylim(0.5, 1.5)
+            fit_str = "\n".join((fit_str, f"$y_{str(n+1)}={means[n]:.6}$"))
+        text_loc = (0.03, 0.05) if (tmin=="5" and l_size=="very-coarse") else (0.50, 0.55)
+        ax.text(*text_loc, fit_str, transform=ax.transAxes, fontsize=12)
+        ax.set_ylim(0.4, 2)
+        ax.xaxis.set_ticks(np.arange(1, 6+1, 1))
         ax.plot(nterms, means, "x")
         ax.set_title(title, fontsize=18)
         ax.set_xlabel("n", fontsize=12)
+        ax.set_ylabel(r"$\chi^2 / \mathrm{dof}$", fontsize=12)
         ax.tick_params("both", labelsize=12)
     out_name = l_size + "_fitQuality"
     figF.savefig(out_path + out_name, pad_inches=0)
+    
+    with open(raw_path + "out.dat", "w") as f:
+        print(*out_strings, file=f, sep="\n")
 
 def split_gvars(vals):
     means = []
