@@ -11,8 +11,6 @@ def main():
     args = parser.parse_args()
     filename = args.filename if args.filename else "2pt_hisq_msml5_fine_D_nongold_489conf"
     time_slices = int(args.time_slices if args.time_slices else 96)
-    # Load data
-    data = np.loadtxt(f"data/{filename}.dat")
 
     with open(f"data/{filename}.gpl", "r") as textFile:
         raw_data = np.loadtxt(textFile, usecols=range(1,time_slices+1))
