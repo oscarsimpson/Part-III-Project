@@ -89,7 +89,7 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
                 good_err = errs[good_n]
                 out_strings.append(title + "=" + str(good_mean) + "+-" + str(good_err)) # Add data point to output file for accurate reading
                 val_str = title + "=" + fr"{good_mean:.4f} $\pm$ {good_err:.4f}"
-                ax.text(0.35, 0.5, val_str, transform=ax.transAxes, fontsize=12)
+                ax.text(0.3, 0.5, val_str, transform=ax.transAxes, fontsize=12)
                 ax.errorbar(nterms, means, errs, fmt="x", ecolor="r", elinewidth=1, capsize=3)
                 ax.set_title(title, fontsize=18)
                 ax.set_xlabel("n", fontsize=12)
@@ -110,9 +110,9 @@ def plot(raw_path, n): # raw_path contains the folder eg data/2pt_hisq_coarse_D_
         fit_str = ""
         for n in range(N_EXCL):
             fit_str = "\n".join((fit_str, f"$y_{str(n+1)}={means[n]:.6}$"))
-        text_loc = (0.03, 0.05) if (tmin=="5" and l_size=="very-coarse") else (0.50, 0.55)
+        text_loc = (0.03, 0.05) if (tmin in ["3","4","5"] and l_size=="very-coarse") else (0.50, 0.55)
         ax.text(*text_loc, fit_str, transform=ax.transAxes, fontsize=12)
-        ax.set_ylim(0.4, 2)
+        ax.set_ylim(0.4, 3)
         ax.xaxis.set_ticks(np.arange(1, 6+1, 1))
         ax.plot(nterms, means, "x")
         ax.set_title(title, fontsize=18)

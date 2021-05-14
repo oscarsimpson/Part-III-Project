@@ -51,10 +51,10 @@ def plot(meff_data, avg_meff, title, filename, errormag, plateau):
 
     errormaglabel = "" if errormag==1 else f" (Errors magnified by x{errormag})"
 
-    fig, ax = plt.subplots(figsize=(12, 7.2))
+    fig, ax = plt.subplots(figsize=(7, 4))
     ax.set_title(title, fontsize=24)
 
-    ax.errorbar(range(time_slices), avg, yerr=errormag*stddev, ecolor="black", elinewidth=2, linewidth=0, fmt='r.', markersize=5, \
+    ax.errorbar(range(time_slices), avg, yerr=errormag*stddev, ecolor="black", elinewidth=1.5, linewidth=0, fmt='r.', markersize=6, \
             label=r"$m_{eff}(t)$" + errormaglabel)
     ax.axhline(avg_meff, color='blue', linestyle=':', label=r"First order estimate for $m_{eff} \approx$ " + str(round(avg_meff, 3)) )
     ax.axvline(x=plateau[0]-0.5, color='green', linestyle=':')
@@ -62,7 +62,7 @@ def plot(meff_data, avg_meff, title, filename, errormag, plateau):
     # The -0.5 makes it very clear which points are included in the average.
 
     ax.set_xlabel("Time", fontsize=18)
-    ax.set_ylabel("Mass", fontsize=18)
+    ax.set_ylabel("Effective Mass", fontsize=18)
     ax.legend(fontsize=16, loc='upper right')
     ax.tick_params(axis='both', which='both', labelsize=16)
 

@@ -19,7 +19,7 @@ def plot(correlation_data, title, filename):
     stddev = correlation_data.std(0)
     time_slices = len(avg)
 
-    fig, ax = plt.subplots(figsize=(12, 7.2))
+    fig, ax = plt.subplots(figsize=(7, 4))
     if title != None:
         ax.set_title(title, fontsize=24)
 
@@ -29,7 +29,7 @@ def plot(correlation_data, title, filename):
     ax.tick_params(axis='both', which='both', labelsize=16)
 
     ax2 = ax.twinx()
-    ax2.plot(stddev, color='orange', linewidth=0.8)
+    ax2.plot(np.abs(stddev/avg), color='orange', linewidth=0.8)
     ax2.set_yscale('log')
     ax2.set_ylabel('Error', fontsize=18)
     ax2.tick_params(axis='both', which='both', labelsize=16)
